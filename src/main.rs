@@ -16,21 +16,23 @@ pub trait Node: Send {
 
 struct Sinoid {
     pub freq: f32,
+    pub offset: f32,
 }
 
 impl Node for Sinoid {
     fn sample (&self, ctx: &SamplingContext) -> f32 {
-        (ctx.clock *  self.freq * PI * 2.0).sin()
+        ((ctx.clock * self.freq + self.offset) * PI * 2.0).sin()
     }
 }
 
 struct Square {
     pub freq: f32,
+    pub offset: f32,
 }
 
 impl Node for Square {
     fn sample (&self, ctx: &SamplingContext) -> f32 {
-        if (ctx.clock * self.freq * PI * 2.0).sin() > 0.0 {
+        if ((ctx.clock * self.freq + self.offset) * PI * 2.0).sin() > 0.0 {
             1.0
         } else {
             -1.0
@@ -47,23 +49,6 @@ impl Node for Sum {
         self.nodes.iter().map (|n| n.sample(ctx)).sum()
     }
 }
-
-struct PhaseShift {
-    pub node: Box<dyn Node>,
-    pub offset: f32,
-}
-
-impl Node for PhaseShift {
-    fn sample (&self, ctx: &SamplingContext) -> f32 {
-        let context = SamplingContext {
-            clock: ctx.clock + self.offset,
-            ..*ctx
-        };
-
-        self.node.sample (&context)
-    }
-}
-
 
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -82,18 +67,15 @@ fn main() {
     let tree = Sum {
         nodes: vec![
             Box::new(Sinoid {
-                freq: 440.0
+                freq: 440.0,
+                offset: 0.0
             }),
-            Box::new(PhaseShift {
-                node: Box::new(Square {
-                    freq: 440.0,
-                }),
-                offset: 0.5 / 440.00
+            Box::new(Square {
+                freq: 440.0,
+                offset: 0.5
             }),
         ]
     };
-
-
 
     let tree = Mutex::new (tree);
     let tree = Arc::new (tree);
@@ -107,11 +89,9 @@ fn main() {
                 clock: sample_position,
                 sample_rate
             };
-            
-            
+                     
             let out = out_node.lock().unwrap().sample (&context);
-            println!("{}", out);
-
+            println!("{}", out.min(1.0).max(-1.0)   );
             out.min(1.0).max(-1.0)   
         }
     }) (tree);
