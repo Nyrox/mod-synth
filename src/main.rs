@@ -1,3 +1,6 @@
+#![allow(unused_imports)]
+#![allow(dead_code)]
+#![allow(unused_variables)]
 
 extern crate cpal;
 
@@ -13,6 +16,7 @@ use std::sync::Mutex;
 
 mod synth;
 use synth::nodes::*;
+use synth::ui::*;
 
 fn main() {
     setup_sound();
@@ -20,6 +24,15 @@ fn main() {
 }
 
 fn sfml_loop() {
+    //FIXME: tree defined globally 1 place
+    let tree = WaveGenerator {
+        wave_type: WaveType::Sawtooth,
+        freq: 440.0,
+        offset: 0.0
+    };
+
+    let ui_root = UINode::new(50.0, 50.0, Box::new(tree));
+
     let mut window = RenderWindow::new(
         (800, 600),
         "Modular Synth",
@@ -30,19 +43,11 @@ fn sfml_loop() {
     let mut running = true;
     let mut clock = Clock::start();
 
-    let mut rect = RectangleShape::new();
-    rect.set_size(Vector2f::new(100.0, 100.0));
-    rect.set_origin(Vector2f::new(0.0, 0.0));
-    rect.set_position(Vector2f::new(20.0, 20.0));
-    rect.set_fill_color(&Color::GREEN);
-
     loop {
         while let Some(event) = window.poll_event() {
             match event {
                 Event::Closed => return,
                 Event::MouseButtonPressed { button, x, y } => {
-                    rect.set_position(Vector2f::new(x as f32, y as f32));
-                    
                 }
                 _ => {}
             }
@@ -52,7 +57,7 @@ fn sfml_loop() {
         }
         window.clear(&Color::BLACK);
         if running {
-            window.draw(&rect);
+            window.draw(&ui_root);
         }
         window.display()
     }
