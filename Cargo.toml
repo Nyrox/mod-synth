@@ -8,4 +8,4 @@ edition = "2018"
 
 [dependencies]
 cpal="*"
-
+sfml="0.14.0"
