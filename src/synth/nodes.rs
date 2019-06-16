@@ -11,6 +11,7 @@ pub trait Node: Send {
     fn sample (&self, ctx: &SamplingContext) -> f32;
 }
 
+#[derive(Clone, Copy)]
 pub enum WaveType {
     Sine,
     Square,
@@ -34,6 +35,7 @@ impl Node for WaveGenerator {
         }   
     }
 }
+
 
 pub struct Sum {
     pub nodes: Vec<Box<dyn Node>>,
