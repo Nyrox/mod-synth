@@ -66,7 +66,9 @@ fn sfml_loop() {
 fn setup_sound() {
     //Setup cpal
     let device = cpal::default_output_device().expect("Failed to get default output device");
-    let format = device.default_output_format().expect("Failed to get default output format");
+    let format = device
+        .default_output_format()
+        .expect("Failed to get default output format");
     let event_loop = cpal::EventLoop::new();
     let stream_id = event_loop.build_output_stream(&device, &format).unwrap();
     event_loop.play_stream(stream_id.clone());
@@ -74,15 +76,11 @@ fn setup_sound() {
     let sample_rate = format.sample_rate.0 as f32;
     let mut sample_clock = 0f32;
 
-    let tree = WaveGenerator {
-        wave_type: WaveType::Sawtooth,
-        freq: 440.0,
-        offset: 0.0
-    };
+    let tree = MidiInputOscillator::new(WaveType::Sawtooth, 1, 1);
 
-    let tree = Mutex::new (tree);
-    let tree = Arc::new (tree);
-    
+    let tree = Mutex::new(tree);
+    let tree = Arc::new(tree);
+
     //Get 1 sample recursively
     let mut next_value = (move |out_node: Arc<Mutex<dyn Node>>| {
         move || {
@@ -91,16 +89,16 @@ fn setup_sound() {
 
             let context = SamplingContext {
                 clock: sample_position,
-                sample_rate
+                sample_rate,
             };
-                     
-            let out = out_node.lock().unwrap().sample (&context);
-            
+
+            let out = out_node.lock().unwrap().sample(&context);
+
             //println!("{}", out.min(1.0).max(-1.0));
-            
-            1.0//out.min(1.0).max(-1.0)   
+
+            out.min(1.0).max(-1.0)
         }
-    }) (tree);
+    })(tree);
 
     //Boilerplate shit
     std::thread::spawn(move || { 

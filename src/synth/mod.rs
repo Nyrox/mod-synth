@@ -1,4 +1,8 @@
+pub mod nodes;
+pub mod ui;
+
 mod constants;
 mod waves;
-pub mod ui;
-pub mod nodes;
+mod graph;
+
+pub use graph::Graph;
