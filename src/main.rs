@@ -31,7 +31,8 @@ fn main() {
         ]
     };*/
 
-    let tree = Sawtooth {
+    let tree = WaveGenerator {
+        wave_type: WaveType::Sawtooth,
         freq: 440.0,
         offset: 0.0
     };

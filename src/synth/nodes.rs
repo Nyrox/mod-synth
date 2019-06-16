@@ -11,47 +11,27 @@ pub trait Node: Send {
     fn sample (&self, ctx: &SamplingContext) -> f32;
 }
 
-struct Sinoid {
+pub enum WaveType {
+    Sine,
+    Square,
+    Sawtooth,
+    Triangle
+}
+
+pub struct WaveGenerator {
     pub freq: f32,
     pub offset: f32,
+    pub wave_type: WaveType
 }
 
-impl Node for Sinoid {
+impl Node for WaveGenerator {
     fn sample (&self, ctx: &SamplingContext) -> f32 {
-        sine_wave(self.freq, ctx.clock, self.offset)
-    }
-}
-
-pub struct Square {
-    pub freq: f32,
-    pub offset: f32,
-}
-
-impl Node for Square {
-    fn sample (&self, ctx: &SamplingContext) -> f32 {
-        square_wave(self.freq, ctx.clock, self.offset)
-    }
-}
-
-pub struct Sawtooth {
-    pub freq: f32,
-    pub offset: f32,
-}
-
-impl Node for Sawtooth {
-    fn sample (&self, ctx: &SamplingContext) -> f32 {
-        sawtooth_wave(self.freq, ctx.clock, self.offset)
-    }
-}
-
-pub struct Triangle {
-    pub freq: f32,
-    pub offset: f32,
-}
-
-impl Node for Triangle {
-    fn sample (&self, ctx: &SamplingContext) -> f32 {
-        triangle_wave(self.freq, ctx.clock, self.offset)
+        match self.wave_type {
+            WaveType::Sine => sine_wave(self.freq, ctx.clock, self.offset),
+            WaveType::Square => square_wave(self.freq, ctx.clock, self.offset),
+            WaveType::Sawtooth => sawtooth_wave(self.freq, ctx.clock, self.offset),
+            WaveType::Triangle => triangle_wave(self.freq, ctx.clock, self.offset)
+        }   
     }
 }
 
