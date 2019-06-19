@@ -13,7 +13,7 @@ pub struct SamplingContext {
 }
 
 pub trait Node: Send {
-    fn sample(&self, ctx: &SamplingContext) -> f32;
+    fn sample(&self, ctx: &SamplingContext, inputs: Vec<f32>) -> f32;
 }
 
 #[derive(Clone, Copy)]
@@ -31,7 +31,7 @@ pub struct WaveGenerator {
 }
 
 impl Node for WaveGenerator {
-    fn sample(&self, ctx: &SamplingContext) -> f32 {
+    fn sample(&self, ctx: &SamplingContext, inputs: Vec<f32>) -> f32 {
         match self.wave_type {
             WaveType::Sine => sine_wave(self.freq, ctx.clock, self.offset),
             WaveType::Square => square_wave(self.freq, ctx.clock, self.offset),
@@ -41,16 +41,14 @@ impl Node for WaveGenerator {
     }
 }
 
-pub struct Sum {
-    pub nodes: Vec<Box<dyn Node>>,
-}
-
+pub struct Sum;
 impl Node for Sum {
-    fn sample(&self, ctx: &SamplingContext) -> f32 {
-        self.nodes.iter().map(|n| n.sample(ctx)).sum()
+    fn sample(&self, ctx: &SamplingContext, inputs: Vec<f32>) -> f32 {
+        inputs.iter().sum()
     }
 }
 
+#[cfg(feature = "midi")]
 pub struct MidiInputOscillator {
     pub wavetype: WaveType,
     input_device: usize,
@@ -59,6 +57,7 @@ pub struct MidiInputOscillator {
     connection: MidiInputConnection<()>,
 }
 
+#[cfg(feature = "midi")]
 impl Node for MidiInputOscillator {
     fn sample(&self, ctx: &SamplingContext) -> f32 {
         let mut output = 0.0;
@@ -93,6 +92,7 @@ impl Node for MidiInputOscillator {
     }
 }
 
+#[cfg(feature = "midi")]
 impl MidiInputOscillator {
     pub fn new(wavetype: WaveType, input_device: usize, midi_channel: u8) -> Self {
         let midi_in = MidiInput::new("midir reading input").expect("Failed to create midi input");
