@@ -76,7 +76,11 @@ fn setup_sound() {
     let sample_rate = format.sample_rate.0 as f32;
     let mut sample_clock = 0f32;
 
-    let tree = MidiInputOscillator::new(WaveType::Sawtooth, 1, 1);
+    let tree = WaveGenerator {
+        wave_type: WaveType::Sawtooth,
+        freq: 440.0,
+        offset: 0.0
+    };
 
     let tree = Mutex::new(tree);
     let tree = Arc::new(tree);

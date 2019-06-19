@@ -51,7 +51,7 @@ impl Node for Sum {
     }
 }
 
-pub struct MidiInputOscillator {
+/*pub struct MidiInputOscillator {
     pub wavetype: WaveType,
     input_device: usize,
     midi_channel: u8,
@@ -158,4 +158,4 @@ impl MidiInputOscillator {
             *n = 0;
         }
     }
-}
+}*/
