@@ -1,8 +1,7 @@
 use super::nodes::*;
 use sfml::graphics::{
-    CircleShape, Color, Font, RectangleShape, 
-    RenderTarget, RenderWindow, Shape, Text, Transformable,
-    Drawable, RenderStates
+    CircleShape, Color, Drawable, Font, RectangleShape, RenderStates, RenderTarget, RenderWindow,
+    Shape, Text, Transformable,
 };
 use sfml::system::{Clock, Time, Vector2f};
 
@@ -15,7 +14,11 @@ pub struct UINode<'s> {
 }
 
 impl<'s> Drawable for UINode<'s> {
-    fn draw<'a: 'shader, 'texture, 'shader, 'shader_texture>(&'a self, rt: &mut RenderTarget, rs: RenderStates) {
+    fn draw<'a: 'shader, 'texture, 'shader, 'shader_texture>(
+        &'a self,
+        rt: &mut RenderTarget,
+        rs: RenderStates,
+    ) {
         rt.draw(&self.bg);
     }
 }
@@ -33,7 +36,7 @@ impl<'s> UINode<'s> {
             y: y,
             node: node,
 
-            bg: bg
+            bg: bg,
         }
     }
 }
@@ -50,8 +53,8 @@ impl NodeMetaData for WaveGenerator {
             WaveType::Sine => "Sine wave",
             WaveType::Square => "Square wave",
             WaveType::Sawtooth => "Sawtooth wave",
-            WaveType::Triangle => "Triangle wave"
-        }   
+            WaveType::Triangle => "Triangle wave",
+        }
     }
     fn get_inputs(&self) -> Vec<&'static str> {
         vec!["freq"]

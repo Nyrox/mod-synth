@@ -5,8 +5,8 @@
 extern crate cpal;
 
 use sfml::graphics::{
-    CircleShape, Color, Font, RectangleShape, 
-    RenderTarget, RenderWindow, Shape, Text, Transformable,
+    CircleShape, Color, Font, RectangleShape, RenderTarget, RenderWindow, Shape, Text,
+    Transformable,
 };
 use sfml::system::{Clock, Time, Vector2f};
 use sfml::window::{ContextSettings, Event, Key, Style};
@@ -27,7 +27,7 @@ fn sfml_loop() {
     let tree = WaveGenerator {
         wave_type: WaveType::Sawtooth,
         freq: 440.0,
-        offset: 0.0
+        offset: 0.0,
     };
 
     let ui_root = UINode::new(50.0, 50.0, Box::new(tree));
@@ -36,7 +36,7 @@ fn sfml_loop() {
         (800, 600),
         "Modular Synth",
         Style::CLOSE,
-        &Default::default()
+        &Default::default(),
     );
     window.set_vertical_sync_enabled(true);
     let mut running = true;
@@ -46,8 +46,7 @@ fn sfml_loop() {
         while let Some(event) = window.poll_event() {
             match event {
                 Event::Closed => return,
-                Event::MouseButtonPressed { button, x, y } => {
-                }
+                Event::MouseButtonPressed { button, x, y } => {}
                 _ => {}
             }
         }
@@ -77,17 +76,17 @@ fn setup_sound() {
 
     //Make output node
     let mut graph = Graph::new();
-    let out = Sum { };
+    let out = Sum {};
     let out_index = graph.insert(Box::new(out));
 
     //Make wave gen node, hook up
     let wavegen = WaveGenerator {
         freq: 440.0,
         offset: 0.0,
-        wave_type: WaveType::Sawtooth
+        wave_type: WaveType::Sawtooth,
     };
     let wavegen_index = graph.insert(Box::new(wavegen));
-    graph.get_mut(out_index).inputs.push(wavegen_index);    
+    graph.get_mut(out_index).inputs.push(wavegen_index);
 
     let graph = Arc::new(Mutex::new(graph));
 
@@ -111,35 +110,39 @@ fn setup_sound() {
     })(graph, out_index);
 
     //Boilerplate shit
-    std::thread::spawn(move || { 
-        event_loop.run(move |_, data| {
-            match data {
-                cpal::StreamData::Output { buffer: cpal::UnknownTypeOutputBuffer::U16(mut buffer) } => {
-                    for sample in buffer.chunks_mut(format.channels as usize) {
-                        let value = ((next_value() * 0.5 + 0.5) * std::u16::MAX as f32) as u16;
-                        for out in sample.iter_mut() {
-                            *out = value;
-                        }
+    std::thread::spawn(move || {
+        event_loop.run(move |_, data| match data {
+            cpal::StreamData::Output {
+                buffer: cpal::UnknownTypeOutputBuffer::U16(mut buffer),
+            } => {
+                for sample in buffer.chunks_mut(format.channels as usize) {
+                    let value = ((next_value() * 0.5 + 0.5) * std::u16::MAX as f32) as u16;
+                    for out in sample.iter_mut() {
+                        *out = value;
                     }
-                },
-                cpal::StreamData::Output { buffer: cpal::UnknownTypeOutputBuffer::I16(mut buffer) } => {
-                    for sample in buffer.chunks_mut(format.channels as usize) {
-                        let value = (next_value() * std::i16::MAX as f32) as i16;
-                        for out in sample.iter_mut() {
-                            *out = value;
-                        }
-                    }
-                },
-                cpal::StreamData::Output { buffer: cpal::UnknownTypeOutputBuffer::F32(mut buffer) } => {
-                    for sample in buffer.chunks_mut(format.channels as usize) {
-                        let value = next_value();
-                        for out in sample.iter_mut() {
-                            *out = value;
-                        }
-                    }
-                },
-                _ => (),
+                }
             }
+            cpal::StreamData::Output {
+                buffer: cpal::UnknownTypeOutputBuffer::I16(mut buffer),
+            } => {
+                for sample in buffer.chunks_mut(format.channels as usize) {
+                    let value = (next_value() * std::i16::MAX as f32) as i16;
+                    for out in sample.iter_mut() {
+                        *out = value;
+                    }
+                }
+            }
+            cpal::StreamData::Output {
+                buffer: cpal::UnknownTypeOutputBuffer::F32(mut buffer),
+            } => {
+                for sample in buffer.chunks_mut(format.channels as usize) {
+                    let value = next_value();
+                    for out in sample.iter_mut() {
+                        *out = value;
+                    }
+                }
+            }
+            _ => (),
         });
     });
 }
