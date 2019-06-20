@@ -6,4 +6,4 @@ mod waves;
 
 pub use graph::Graph;
 pub use nodes::*;
-pub use ui::UINode;
+pub use ui::{UINode, UI};

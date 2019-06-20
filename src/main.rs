@@ -3,6 +3,8 @@
 #![allow(unused_variables)]
 
 extern crate cpal;
+#[macro_use]
+extern crate lazy_static;
 
 use sfml::graphics::{
     CircleShape, Color, Font, RectangleShape, RenderTarget, RenderWindow, Shape, Text,
@@ -17,21 +19,29 @@ use std::sync::Mutex;
 mod synth;
 use synth::*;
 
+lazy_static! {
+    static ref graph: Arc<Mutex<Graph>> = Arc::new(Mutex::new(Graph::new()));
+}
+
 fn main() {
-    setup_sound();
+    //Make output node
+    let out = Sum {};
+    let out_index = graph.lock().unwrap().insert(Box::new(out));
+
+    //Make wave gen node, hook up
+    let wavegen = WaveGenerator {
+        freq: 440.0,
+        offset: 0.0,
+        wave_type: WaveType::Sawtooth,
+    };
+    let wavegen_index = graph.lock().unwrap().insert(Box::new(wavegen));
+    graph.lock().unwrap().get_mut(out_index).inputs.push(wavegen_index);
+
+    setup_sound(out_index);
     sfml_loop();
 }
 
 fn sfml_loop() {
-    //FIXME: tree defined globally 1 place
-    let tree = WaveGenerator {
-        wave_type: WaveType::Sawtooth,
-        freq: 440.0,
-        offset: 0.0,
-    };
-
-    let ui_root = UINode::new(50.0, 50.0, Box::new(tree));
-
     let mut window = RenderWindow::new(
         (800, 600),
         "Modular Synth",
@@ -41,6 +51,15 @@ fn sfml_loop() {
     window.set_vertical_sync_enabled(true);
     let mut running = true;
     let mut clock = Clock::start();
+
+    let mut ui_root = UI::new();
+    let mut x = 0.0;
+    let mut graph_len = graph.lock().unwrap().len();
+    
+    for i in 0..graph_len {
+        ui_root.node_indexes.insert(i, UINode::new(x, 20.0));
+        x += 120.0;
+    } 
 
     loop {
         while let Some(event) = window.poll_event() {
@@ -61,7 +80,7 @@ fn sfml_loop() {
     }
 }
 
-fn setup_sound() {
+fn setup_sound(out_index: usize) {
     //Setup cpal
     let device = cpal::default_output_device().expect("Failed to get default output device");
     let format = device
@@ -74,24 +93,8 @@ fn setup_sound() {
     let sample_rate = format.sample_rate.0 as f32;
     let mut sample_clock = 0f32;
 
-    //Make output node
-    let mut graph = Graph::new();
-    let out = Sum {};
-    let out_index = graph.insert(Box::new(out));
-
-    //Make wave gen node, hook up
-    let wavegen = WaveGenerator {
-        freq: 440.0,
-        offset: 0.0,
-        wave_type: WaveType::Sawtooth,
-    };
-    let wavegen_index = graph.insert(Box::new(wavegen));
-    graph.get_mut(out_index).inputs.push(wavegen_index);
-
-    let graph = Arc::new(Mutex::new(graph));
-
     //Get 1 sample recursively
-    let mut next_value = (move |graph: Arc<Mutex<Graph>>, out_index: usize| {
+    let mut next_value = (move || {
         move || {
             sample_clock = (sample_clock + 1.0) % sample_rate;
             let sample_position = sample_clock / sample_rate;
@@ -103,11 +106,9 @@ fn setup_sound() {
 
             let out = graph.lock().unwrap().eval_node(&context, out_index);
 
-            //println!("{}", out.min(1.0).max(-1.0));
-
             out.min(1.0).max(-1.0)
         }
-    })(graph, out_index);
+    })();
 
     //Boilerplate shit
     std::thread::spawn(move || {

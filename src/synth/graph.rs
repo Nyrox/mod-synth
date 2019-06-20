@@ -2,11 +2,12 @@ use super::nodes::{Node, SamplingContext};
 
 pub struct Graph {
     nodes: Vec<GraphNode>,
+    pub out_index: usize,
 }
 
 impl Graph {
     pub fn new() -> Self {
-        Graph { nodes: Vec::new() }
+        Graph { nodes: Vec::new(), out_index: 0 }
     }
 
     pub fn len(&self) -> usize {

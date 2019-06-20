@@ -1,15 +1,50 @@
+use super::graph::GraphNode;
 use super::nodes::*;
 use sfml::graphics::{
     CircleShape, Color, Drawable, Font, RectangleShape, RenderStates, RenderTarget, RenderWindow,
     Shape, Text, Transformable,
 };
 use sfml::system::{Clock, Time, Vector2f};
+use std::collections::HashMap;
+use crate::graph;
+
+pub struct UI<'s> {
+    pub node_indexes: HashMap<usize, UINode<'s>>,
+
+    dragging: bool,
+    dragging_index: usize,
+    dragging_anchor: Vector2f,
+}
+
+impl<'s> Drawable for UI<'s> {
+    fn draw<'a: 'shader, 'texture, 'shader, 'shader_texture>(
+        &'a self,
+        rt: &mut RenderTarget,
+        rs: RenderStates,
+    ) {
+        for (k, v) in self.node_indexes.iter() {
+            rt.draw(v);
+        }
+    }
+}
+
+impl<'s> UI<'s> {
+    pub fn new() -> Self {
+        Self {
+            node_indexes: HashMap::new(),
+
+            dragging: false,
+            dragging_index: 0,
+            dragging_anchor: Vector2f::new(0.0, 0.0),
+        }
+    }
+}
 
 pub struct UINode<'s> {
     pub x: f32,
     pub y: f32,
-    pub node: Box<Node>,
 
+    title_bar: RectangleShape<'s>,
     bg: RectangleShape<'s>,
 }
 
@@ -20,22 +55,29 @@ impl<'s> Drawable for UINode<'s> {
         rs: RenderStates,
     ) {
         rt.draw(&self.bg);
+        rt.draw(&self.title_bar);
     }
 }
 
 impl<'s> UINode<'s> {
-    pub fn new(x: f32, y: f32, node: Box<Node>) -> UINode<'s> {
+    pub fn new(x: f32, y: f32) -> UINode<'s> {
         let mut bg = RectangleShape::new();
         bg.set_size(Vector2f::new(100.0, 100.0));
         bg.set_origin(Vector2f::new(0.0, 0.0));
         bg.set_position(Vector2f::new(x, y));
         bg.set_fill_color(&Color::GREEN);
 
+        let mut title_bar = RectangleShape::new();
+        title_bar.set_size(Vector2f::new(100.0, 20.0));
+        title_bar.set_origin(Vector2f::new(0.0, 0.0));
+        title_bar.set_position(Vector2f::new(x, y));
+        title_bar.set_fill_color(&Color::BLUE);
+
         UINode {
             x: x,
             y: y,
-            node: node,
 
+            title_bar: title_bar,
             bg: bg,
         }
     }
