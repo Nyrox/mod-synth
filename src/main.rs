@@ -3,8 +3,6 @@
 #![allow(unused_variables)]
 
 extern crate cpal;
-#[macro_use]
-extern crate lazy_static;
 
 use sfml::graphics::{
     CircleShape, Color, Font, RectangleShape, RenderTarget, RenderWindow, Shape, Text,
@@ -19,29 +17,14 @@ use std::sync::Mutex;
 mod synth;
 use synth::*;
 
-lazy_static! {
-    static ref graph: Arc<Mutex<Graph>> = Arc::new(Mutex::new(Graph::new()));
-}
-
 fn main() {
-    //Make output node
-    let out = Sum {};
-    let out_index = graph.lock().unwrap().insert(Box::new(out));
-
-    //Make wave gen node, hook up
-    let wavegen = WaveGenerator {
-        freq: 440.0,
-        offset: 0.0,
-        wave_type: WaveType::Sawtooth,
-    };
-    let wavegen_index = graph.lock().unwrap().insert(Box::new(wavegen));
-    graph.lock().unwrap().get_mut(out_index).inputs.push(wavegen_index);
-
-    setup_sound(out_index);
-    sfml_loop();
+    let sound_graph = Arc::new(Mutex::new(Graph::new()));
+    setup_sound(&sound_graph);
+    sfml_loop(&sound_graph);
 }
 
-fn sfml_loop() {
+fn sfml_loop(sound_graph: &Graph) {
+    //Setup sfml
     let mut window = RenderWindow::new(
         (800, 600),
         "Modular Synth",
@@ -52,12 +35,31 @@ fn sfml_loop() {
     let mut running = true;
     let mut clock = Clock::start();
 
-    let mut ui_root = UI::new();
-    let mut x = 0.0;
-    let mut graph_len = graph.lock().unwrap().len();
+    //Setup graph
+    let mut ui_graph = Graph::new();
     
-    for i in 0..graph_len {
-        ui_root.node_indexes.insert(i, UINode::new(x, 20.0));
+    //Make output node
+    let out = Sum {};
+    let out_index = ui_graph.insert(Box::new(out));
+    
+    //Make wave gen node, hook up
+    let wavegen = WaveGenerator {
+        freq: 440.0,
+        offset: 0.0,
+        wave_type: WaveType::Sawtooth,
+    };
+    let wavegen_index = ui_graph.insert(Box::new(wavegen));
+    ui_graph.get_mut(out_index).inputs.push(wavegen_index);
+    ui_graph.out_index = out_index;
+
+    //Copy ui graph to sound
+    (*sound_graph.lock().unwrap()) = ui_graph.clone();
+
+    //Make ui nodes for each graph node
+    let mut ui_root = UI::new();
+    let x = 0.0;
+    for i in 0..ui_graph.len() {
+        ui_root.nodes.push(UINode::new(i, x, 20.0));
         x += 120.0;
     } 
 
@@ -80,7 +82,7 @@ fn sfml_loop() {
     }
 }
 
-fn setup_sound(out_index: usize) {
+fn setup_sound(sound_graph: &Graph) {
     //Setup cpal
     let device = cpal::default_output_device().expect("Failed to get default output device");
     let format = device
@@ -104,7 +106,7 @@ fn setup_sound(out_index: usize) {
                 sample_rate,
             };
 
-            let out = graph.lock().unwrap().eval_node(&context, out_index);
+            let out = sound_graph.lock().unwrap().eval_node(&context, sound_graph.out_index);
 
             out.min(1.0).max(-1.0)
         }

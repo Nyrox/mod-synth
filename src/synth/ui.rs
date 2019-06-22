@@ -6,10 +6,9 @@ use sfml::graphics::{
 };
 use sfml::system::{Clock, Time, Vector2f};
 use std::collections::HashMap;
-use crate::graph;
 
 pub struct UI<'s> {
-    pub node_indexes: HashMap<usize, UINode<'s>>,
+    pub nodes: Vec<UINode<'s>>,
 
     dragging: bool,
     dragging_index: usize,
@@ -22,8 +21,8 @@ impl<'s> Drawable for UI<'s> {
         rt: &mut RenderTarget,
         rs: RenderStates,
     ) {
-        for (k, v) in self.node_indexes.iter() {
-            rt.draw(v);
+        for i in self.nodes.iter() {
+            rt.draw(i);
         }
     }
 }
@@ -31,7 +30,7 @@ impl<'s> Drawable for UI<'s> {
 impl<'s> UI<'s> {
     pub fn new() -> Self {
         Self {
-            node_indexes: HashMap::new(),
+            nodes: Vec::new(),
 
             dragging: false,
             dragging_index: 0,
@@ -41,6 +40,8 @@ impl<'s> UI<'s> {
 }
 
 pub struct UINode<'s> {
+    pub node_index: usize,
+
     pub x: f32,
     pub y: f32,
 
@@ -60,7 +61,7 @@ impl<'s> Drawable for UINode<'s> {
 }
 
 impl<'s> UINode<'s> {
-    pub fn new(x: f32, y: f32) -> UINode<'s> {
+    pub fn new(node_index: usize, x: f32, y: f32) -> UINode<'s> {
         let mut bg = RectangleShape::new();
         bg.set_size(Vector2f::new(100.0, 100.0));
         bg.set_origin(Vector2f::new(0.0, 0.0));
@@ -74,6 +75,8 @@ impl<'s> UINode<'s> {
         title_bar.set_fill_color(&Color::BLUE);
 
         UINode {
+            node_index: node_index,
+
             x: x,
             y: y,
 

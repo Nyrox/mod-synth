@@ -12,7 +12,7 @@ pub struct SamplingContext {
     pub sample_rate: f32,
 }
 
-pub trait Node: Send {
+pub trait Node: Send + Clone {
     fn sample(&self, ctx: &SamplingContext, inputs: Vec<f32>) -> f32;
 }
 
@@ -24,6 +24,7 @@ pub enum WaveType {
     Triangle,
 }
 
+#[derive(Clone)]
 pub struct WaveGenerator {
     pub freq: f32,
     pub offset: f32,
@@ -41,6 +42,7 @@ impl Node for WaveGenerator {
     }
 }
 
+#[derive(Clone)]
 pub struct Sum;
 impl Node for Sum {
     fn sample(&self, ctx: &SamplingContext, inputs: Vec<f32>) -> f32 {

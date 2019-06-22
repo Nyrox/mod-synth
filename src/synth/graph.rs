@@ -1,5 +1,6 @@
 use super::nodes::{Node, SamplingContext};
 
+#[derive(Clone)]
 pub struct Graph {
     nodes: Vec<GraphNode>,
     pub out_index: usize,
@@ -43,6 +44,7 @@ impl Graph {
     }
 }
 
+#[derive(Clone)]
 pub struct GraphNode {
     pub data: Box<Node>,
     pub inputs: Vec<usize>,
